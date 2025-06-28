@@ -1,7 +1,5 @@
+websockets
 fastapi
 uvicorn
-httpx
-websockets
 pydantic
-python-dotenv
-websockets
+python-telegram-bot
