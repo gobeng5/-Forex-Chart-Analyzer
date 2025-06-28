@@ -1,25 +1,34 @@
 import httpx
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
 
-# Replace with your actual token and chat ID
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "YOUR_CHAT_ID_HERE")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 def send_telegram_signal(signal: dict):
+    if not signal:
+        return
+
     message = f"""
-🚨 *New Trade Signal*
+🚨 *New Trade Signal Alert*
 
-📉 *Symbol*: {signal['symbol']}
-📊 *Direction*: {signal['direction'].upper()}
-📈 *Entry*: {signal['entry']}
-⛔ *SL*: {signal['sl']}
-🎯 *TP*: {signal['tp']}
-📊 *Confidence*: {signal['confidence']}%
+📉 *Symbol*: `{signal['symbol']}`
+🕒 *HTF*: `{signal['timeframe_htf']}` | *LTF*: `{signal['timeframe_ltf']}`
 
-#Forex #SignalBot
+📊 *Direction*: *{signal['direction'].upper()}*
+📥 *Order Type*: `{signal['order_type']}`
+
+🎯 *Entry*: `{signal['entry']}`
+⛔ *Stop Loss*: `{signal['sl']}`
+✅ *Take Profit*: `{signal['tp']}`
+
+📈 *Confidence Score*: *{signal['confidence']}%*
+
+#Forex #SignalBot #{signal['direction']} #MTF
     """
+
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
