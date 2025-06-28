@@ -1,10 +1,8 @@
-import random
-import json
 import os
+import json
 import asyncio
 import websockets
 
-# ✅ Fetch live price securely from Deriv
 async def get_live_price(symbol: str) -> float:
     deriv_symbol_map = {
         "Boom 1000": "BOOM1000",
@@ -22,66 +20,39 @@ async def get_live_price(symbol: str) -> float:
     api_token = os.getenv("DERIV_API_TOKEN")
 
     if not api_token:
-        print("❌ DERIV_API_TOKEN is missing from environment variables.")
+        print("❌ DERIV_API_TOKEN is missing in environment variables.")
         return 0.0
 
     try:
+        print(f"🔌 Connecting to Deriv WebSocket for {selected}")
         async with websockets.connect(ws_url, ping_interval=None) as ws:
-            # 🔐 Authorize with token
-            await ws.send(json.dumps({
-                "authorize": api_token
-            }))
+            print("🔐 Sending authorization request...")
+            await ws.send(json.dumps({ "authorize": api_token }))
 
             auth_response = await ws.recv()
-            print("🔑 Authorization response:", auth_response)
+            print("🔑 Auth response from Deriv:", auth_response)
 
-            # ✅ Subscribe to live ticks
             await ws.send(json.dumps({
                 "ticks": selected,
                 "subscribe": 1
             }))
+            print(f"📡 Subscribed to ticks for: {selected}")
 
-            # 🎯 Try to get a valid tick (max 10 attempts)
             for attempt in range(10):
                 try:
                     message = await asyncio.wait_for(ws.recv(), timeout=5)
+                    print(f"🛰️ Tick message received: {message}")
                     data = json.loads(message)
+
                     if "tick" in data and "quote" in data["tick"]:
                         price = float(data["tick"]["quote"])
-                        print(f"✅ Live price for {symbol}: {price}")
+                        print(f"✅ Price found: {price}")
                         return price
                 except asyncio.TimeoutError:
                     print(f"⚠️ Timeout waiting for tick... retry {attempt+1}/10")
 
     except Exception as e:
-        print(f"❌ WebSocket error while fetching live price: {e}")
+        print(f"❌ WebSocket error: {e}")
 
-    print("❌ Failed to fetch live price from Deriv.")
+    print("❌ Final failure: No live price received.")
     return 0.0
-
-# ✅ Generate mock AI-based trading signal
-def generate_signal(symbol: str, price: float) -> dict:
-    direction = random.choice(["buy", "sell"])
-    order_type = random.choice(["market", "buy_limit", "sell_limit", "buy_stop", "sell_stop"])
-    
-    entry = round(price + random.uniform(-5, 5), 2)
-    if direction == "sell":
-        sl = round(entry + random.uniform(5, 10), 2)
-        tp = round(entry - random.uniform(5, 10), 2)
-    else:
-        sl = round(entry - random.uniform(5, 10), 2)
-        tp = round(entry + random.uniform(5, 10), 2)
-
-    confidence = random.randint(70, 95)
-
-    return {
-        "symbol": symbol,
-        "timeframe_htf": "1H",
-        "timeframe_ltf": "15m",
-        "direction": direction,
-        "order_type": order_type,
-        "entry": entry,
-        "sl": sl,
-        "tp": tp,
-        "confidence": confidence
-    }
