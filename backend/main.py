@@ -12,4 +12,9 @@ class PriceData(BaseModel):
 @app.post("/generate-signal/")
 async def get_signal(data: PriceData):
     signal = generate_signal(data.symbol, data.price)
+    
+    # ✅ Send signal to Telegram
+    send_telegram_signal(signal)
+    
     return {"signal": signal}
+
