@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from strategy_engine import generate_signal
 from pydantic import BaseModel
+from telegram_bot import send_telegram_signal
 
 app = FastAPI()
 
