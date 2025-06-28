@@ -1,5 +1,7 @@
 import httpx
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # Replace with your actual token and chat ID
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
