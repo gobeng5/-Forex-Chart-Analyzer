@@ -1,14 +1,19 @@
 from random import randint
 
-# Timeframe simulation settings (mocked for now)
+# Simulated candle data (mocked conditions)
 CANDLE_DATA = {
     "1H": {"trend": "bearish", "structure": "lower-high"},
     "15m": {"confirmation": "bearish-engulfing"}
 }
 
 def simulate_multi_timeframe(symbol: str):
+    """
+    Simulate HTF and LTF confluence.
+    In production, you'd build candles from tick data.
+    """
     htf = "1H"
     ltf = "15m"
+
     htf_trend = CANDLE_DATA[htf]["trend"]
     ltf_pattern = CANDLE_DATA[ltf]["confirmation"]
 
@@ -35,10 +40,13 @@ def choose_order_type(price: float, direction: str):
 
 def generate_signal(symbol: str, price: float) -> dict:
     result = simulate_multi_timeframe(symbol)
-    if not result:
-        return None
 
-    direction, htf, ltf = result
+    # ✅ Always return a fallback signal if no confluence
+    if not result:
+        direction, htf, ltf = "buy", "1H", "15m"
+    else:
+        direction, htf, ltf = result
+
     order_type, entry = choose_order_type(price, direction)
     sl = entry - 15 if direction == "buy" else entry + 15
     tp = entry + 30 if direction == "buy" else entry - 30
