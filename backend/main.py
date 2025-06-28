@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from .strategy_engine import generate_signal
-from .telegram_bot import send_telegram_signal
+from strategy_engine import generate_signal
+from telegram_bot import send_telegram_signal
 
 app = FastAPI()
 
@@ -12,7 +12,7 @@ class PriceData(BaseModel):
 @app.post("/generate-signal/")
 async def get_signal(data: PriceData):
     signal = generate_signal(data.symbol, data.price)
-    print("DEBUG - Signal:", signal)  # For Render logs
+    print("DEBUG - Signal:", signal)  # Show in Render logs
     if signal:
         send_telegram_signal(signal)
     return {"signal": signal}
