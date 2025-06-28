@@ -1,53 +1,53 @@
-from random import randint
+import random
+import asyncio
+import websockets
+import json
 
-# Simulated multi-timeframe condition (replace with real logic later)
-CANDLE_DATA = {
-    "1H": {"trend": "bearish"},
-    "15m": {"confirmation": "bearish-engulfing"}
-}
+# ✅ Deriv WebSocket Price Fetcher
+async def get_live_price(symbol: str) -> float:
+    deriv_symbol_map = {
+        "Boom 1000": "BOOM1000",
+        "Boom 500": "BOOM500",
+        "Crash 1000": "CRASH1000",
+        "Crash 500": "CRASH500",
+        "Volatility 75 Index": "R_75",
+        "Volatility 25 Index": "R_25",
+        "Volatility 10 Index": "R_10",
+        "Volatility 100 Index": "R_100"
+    }
 
-def simulate_multi_timeframe(symbol: str):
-    htf = "1H"
-    ltf = "15m"
-    htf_trend = CANDLE_DATA[htf]["trend"]
-    ltf_pattern = CANDLE_DATA[ltf]["confirmation"]
+    ws_url = "wss://ws.derivws.com/websockets/v3"
+    selected = deriv_symbol_map.get(symbol, "R_75")
 
-    if htf_trend.startswith("bear") and "bearish" in ltf_pattern:
-        direction = "sell"
-    elif htf_trend.startswith("bull") and "bullish" in ltf_pattern:
-        direction = "buy"
-    else:
-        return None
-    return direction, htf, ltf
+    async with websockets.connect(ws_url) as ws:
+        await ws.send(json.dumps({
+            "ticks": selected,
+            "subscribe": 1
+        }))
 
-def choose_order_type(price: float, direction: str):
-    if direction == "buy":
-        return ("buy_limit", price - 10) if randint(0, 1) else ("buy_stop", price + 5)
-    else:
-        return ("sell_limit", price + 10) if randint(0, 1) else ("sell_stop", price - 5)
+        while True:
+            message = await ws.recv()
+            data = json.loads(message)
+            if "tick" in data and "quote" in data["tick"]:
+                return data["tick"]["quote"]
 
+# ✅ Your existing signal logic (mocked AI logic)
 def generate_signal(symbol: str, price: float) -> dict:
-    result = simulate_multi_timeframe(symbol)
-
-    # Always generate fallback signal if no result
-    if not result:
-        direction, htf, ltf = "buy", "1H", "15m"
-    else:
-        direction, htf, ltf = result
-
-    order_type, entry = choose_order_type(price, direction)
-    sl = entry - 15 if direction == "buy" else entry + 15
-    tp = entry + 30 if direction == "buy" else entry - 30
-    confidence = randint(75, 92)
+    direction = random.choice(["buy", "sell"])
+    order_type = random.choice(["market", "buy_limit", "sell_limit", "buy_stop", "sell_stop"])
+    entry = round(price + random.uniform(-5, 5), 2)
+    sl = round(entry + random.uniform(-10, -5) if direction == "sell" else entry + random.uniform(5, 10), 2)
+    tp = round(entry + random.uniform(5, 10) if direction == "sell" else entry + random.uniform(-10, -5), 2)
+    confidence = random.randint(70, 95)
 
     return {
         "symbol": symbol,
-        "timeframe_htf": htf,
-        "timeframe_ltf": ltf,
+        "timeframe_htf": "1H",
+        "timeframe_ltf": "15m",
         "direction": direction,
         "order_type": order_type,
-        "entry": round(entry, 2),
-        "sl": round(sl, 2),
-        "tp": round(tp, 2),
+        "entry": entry,
+        "sl": sl,
+        "tp": tp,
         "confidence": confidence
     }
