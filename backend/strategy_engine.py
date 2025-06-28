@@ -1,9 +1,9 @@
 import random
-import asyncio
-import websockets
 import json
+import websockets
+import asyncio
 
-# ✅ Deriv WebSocket Price Fetcher
+# ✅ Robust live price fetcher from Deriv WebSocket
 async def get_live_price(symbol: str) -> float:
     deriv_symbol_map = {
         "Boom 1000": "BOOM1000",
@@ -19,25 +19,36 @@ async def get_live_price(symbol: str) -> float:
     ws_url = "wss://ws.derivws.com/websockets/v3"
     selected = deriv_symbol_map.get(symbol, "R_75")
 
-    async with websockets.connect(ws_url) as ws:
-        await ws.send(json.dumps({
-            "ticks": selected,
-            "subscribe": 1
-        }))
+    try:
+        async with websockets.connect(ws_url) as ws:
+            await ws.send(json.dumps({
+                "ticks": selected,
+                "subscribe": 1
+            }))
 
-        while True:
-            message = await ws.recv()
-            data = json.loads(message)
-            if "tick" in data and "quote" in data["tick"]:
-                return data["tick"]["quote"]
+            # Wait for 1 valid tick
+            for _ in range(10):
+                message = await ws.recv()
+                data = json.loads(message)
+                if "tick" in data and "quote" in data["tick"]:
+                    price = data["tick"]["quote"]
+                    print(f"✅ Price received from Deriv: {price}")
+                    return price
 
-# ✅ Your existing signal logic (mocked AI logic)
+        print("⚠️ No valid tick received from Deriv.")
+        return 0.0
+
+    except Exception as e:
+        print(f"❌ Deriv WebSocket error: {e}")
+        return 0.0
+
+# ✅ Signal logic
 def generate_signal(symbol: str, price: float) -> dict:
     direction = random.choice(["buy", "sell"])
     order_type = random.choice(["market", "buy_limit", "sell_limit", "buy_stop", "sell_stop"])
     entry = round(price + random.uniform(-5, 5), 2)
-    sl = round(entry + random.uniform(-10, -5) if direction == "sell" else entry + random.uniform(5, 10), 2)
-    tp = round(entry + random.uniform(5, 10) if direction == "sell" else entry + random.uniform(-10, -5), 2)
+    sl = round(entry - random.uniform(5, 10), 2) if direction == "sell" else round(entry + random.uniform(5, 10), 2)
+    tp = round(entry + random.uniform(5, 10), 2) if direction == "sell" else round(entry - random.uniform(5, 10), 2)
     confidence = random.randint(70, 95)
 
     return {
