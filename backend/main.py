@@ -6,20 +6,18 @@ from telegram_bot import send_telegram_signal
 
 app = FastAPI()
 
-# ✅ Enable CORS for your frontend
+# ✅ Allow frontend access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Restrict to your frontend URL in production
+    allow_origins=["*"],  # You can restrict this to your Vercel domain later
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Request model
 class SignalRequest(BaseModel):
     symbol: str
 
-# ✅ Main signal endpoint
 @app.post("/generate-signal/")
 async def generate_signal_with_live_price(data: SignalRequest):
     try:
