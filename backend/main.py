@@ -6,26 +6,30 @@ from telegram_bot import send_telegram_signal
 
 app = FastAPI()
 
-# ✅ Allow frontend access
+# ✅ CORS for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can restrict this to your Vercel domain later
+    allow_origins=["*"],  # In production, set this to your Vercel frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# ✅ Input model for /generate-signal/
 class SignalRequest(BaseModel):
     symbol: str
 
+# ✅ Main route to generate signal using live Deriv price
 @app.post("/generate-signal/")
 async def generate_signal_with_live_price(data: SignalRequest):
     try:
-        live_price = get_live_price(data.symbol)
-        if live_price == 0.0:
+        # ✅ Await the async price fetch
+        price = await get_live_price(data.symbol)
+        if price == 0.0:
             return {"error": "Failed to fetch live price from Deriv."}
 
-        signal = generate_signal(data.symbol, live_price)
+        # ✅ Generate and send signal
+        signal = generate_signal(data.symbol, price)
         print(f"📈 Signal generated: {signal}")
         send_telegram_signal(signal)
 
