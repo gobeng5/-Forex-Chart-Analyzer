@@ -1,7 +1,7 @@
 import random
 import requests
 
-# ✅ Use Deriv REST API (legacy) to get the latest tick price
+# ✅ Fetch live price using Deriv REST API (BinaryWS)
 def get_live_price(symbol: str) -> float:
     deriv_symbol_map = {
         "Boom 1000": "BOOM1000",
@@ -18,7 +18,12 @@ def get_live_price(symbol: str) -> float:
     url = f"https://api.binaryws.com/v3/ticks?symbol={mapped_symbol}"
 
     try:
+        print(f"📡 Fetching price from: {url}")
         response = requests.get(url, timeout=5)
+
+        print(f"🌐 Status: {response.status_code}")
+        print(f"📦 Response: {response.text[:300]}")  # Limit log length for safety
+
         if response.status_code == 200:
             data = response.json()
             if "tick" in data and "quote" in data["tick"]:
@@ -26,15 +31,17 @@ def get_live_price(symbol: str) -> float:
                 print(f"✅ Live price for {symbol}: {price}")
                 return price
             else:
-                print(f"⚠️ Unexpected tick format: {data}")
+                print("⚠️ No valid tick found in response.")
         else:
-            print(f"❌ Deriv API error: {response.status_code} - {response.text}")
-    except Exception as e:
-        print(f"❌ Failed to fetch live price: {e}")
+            print(f"❌ Deriv API returned error {response.status_code}")
 
+    except Exception as e:
+        print(f"❌ Exception while fetching price: {e}")
+
+    print("❌ Final failure: could not fetch live price.")
     return 0.0
 
-# ✅ Generate a random but realistic signal
+# ✅ Generate signal based on live price
 def generate_signal(symbol: str, price: float) -> dict:
     direction = random.choice(["buy", "sell"])
     order_type = random.choice(["market", "buy_limit", "sell_limit", "buy_stop", "sell_stop"])
