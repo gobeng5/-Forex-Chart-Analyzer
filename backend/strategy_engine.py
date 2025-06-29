@@ -1,7 +1,7 @@
 import random
 import requests
 
-# ✅ Use Render-based Deriv price proxy (no token needed)
+# ✅ Get live price using REST proxy (hosted on Render)
 def get_live_price(symbol: str) -> float:
     deriv_symbol_map = {
         "Boom 1000": "BOOM1000",
@@ -15,8 +15,7 @@ def get_live_price(symbol: str) -> float:
     }
 
     mapped_symbol = deriv_symbol_map.get(symbol, "R_75")
-url = f"https://deriv-price-api.onrender.com/price?symbol={mapped_symbol}"
-
+    url = f"https://deriv-price-api.onrender.com/price?symbol={mapped_symbol}"
 
     try:
         print(f"🌐 Fetching live price from: {url}")
@@ -35,7 +34,7 @@ url = f"https://deriv-price-api.onrender.com/price?symbol={mapped_symbol}"
     print("❌ Failed to fetch live price.")
     return 0.0
 
-# ✅ Signal generation logic
+# ✅ Signal generator
 def generate_signal(symbol: str, price: float) -> dict:
     direction = random.choice(["buy", "sell"])
     order_type = random.choice(["market", "buy_limit", "sell_limit", "buy_stop", "sell_stop"])
