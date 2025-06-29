@@ -15,7 +15,8 @@ def get_live_price(symbol: str) -> float:
     }
 
     mapped_symbol = deriv_symbol_map.get(symbol, "R_75")
-    url = f"https://deriv-price-proxy.vercel.app/price?symbol={mapped_symbol}"
+   url = f"https://deriv-price-proxy.vercel.app/price?symbol={mapped_symbol}"
+
 
     try:
         print(f"🌐 Fetching live price from: {url}")
