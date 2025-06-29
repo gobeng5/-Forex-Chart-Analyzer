@@ -1,11 +1,8 @@
-import os
-import json
 import random
-import asyncio
-import websockets
+import requests
 
-# ✅ Fetch live price from Deriv with token auth and full debug logging
-async def get_live_price(symbol: str) -> float:
+# ✅ Use REST API to get current price from Deriv
+def get_live_price(symbol: str) -> float:
     deriv_symbol_map = {
         "Boom 1000": "BOOM1000",
         "Boom 500": "BOOM500",
@@ -17,46 +14,24 @@ async def get_live_price(symbol: str) -> float:
         "Volatility 100 Index": "R_100"
     }
 
-    ws_url = "wss://ws.derivws.com/websockets/v3"
-    selected = deriv_symbol_map.get(symbol, "R_75")
-    api_token = os.getenv("DERIV_API_TOKEN")
-
-    if not api_token:
-        print("❌ DERIV_API_TOKEN is missing in environment variables.")
-        return 0.0
+    mapped = deriv_symbol_map.get(symbol, "R_75")
+    url = f"https://api.deriv.com/api/ticks/{mapped}"
 
     try:
-        print(f"🔌 Connecting to Deriv WebSocket for {selected}")
-        async with websockets.connect(ws_url, ping_interval=None) as ws:
-            print("🔐 Sending authorization request...")
-            await ws.send(json.dumps({ "authorize": api_token }))
-
-            auth_response = await ws.recv()
-            print("🔑 Auth response from Deriv:", auth_response)
-
-            await ws.send(json.dumps({
-                "ticks": selected,
-                "subscribe": 1
-            }))
-            print(f"📡 Subscribed to ticks for: {selected}")
-
-            for attempt in range(10):
-                try:
-                    message = await asyncio.wait_for(ws.recv(), timeout=5)
-                    print(f"🛰️ Tick message received: {message}")
-                    data = json.loads(message)
-
-                    if "tick" in data and "quote" in data["tick"]:
-                        price = float(data["tick"]["quote"])
-                        print(f"✅ Price found: {price}")
-                        return price
-                except asyncio.TimeoutError:
-                    print(f"⚠️ Timeout waiting for tick... retry {attempt+1}/10")
-
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if "tick" in data and "quote" in data["tick"]:
+                price = float(data["tick"]["quote"])
+                print(f"✅ Live price for {symbol}: {price}")
+                return price
+            else:
+                print(f"⚠️ Tick format error: {data}")
+        else:
+            print(f"❌ Deriv API error: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"❌ WebSocket error: {e}")
+        print(f"❌ Failed to fetch live price from Deriv REST API: {e}")
 
-    print("❌ Final failure: No live price received.")
     return 0.0
 
 # ✅ Signal generation logic
