@@ -1,7 +1,7 @@
 import random
 import requests
 
-# ✅ Use REST API to get current price from Deriv
+# ✅ Use Deriv REST API (legacy) to get the latest tick price
 def get_live_price(symbol: str) -> float:
     deriv_symbol_map = {
         "Boom 1000": "BOOM1000",
@@ -14,8 +14,8 @@ def get_live_price(symbol: str) -> float:
         "Volatility 100 Index": "R_100"
     }
 
-    mapped = deriv_symbol_map.get(symbol, "R_75")
-    url = f"https://api.deriv.com/api/ticks/{mapped}"
+    mapped_symbol = deriv_symbol_map.get(symbol, "R_75")
+    url = f"https://api.binaryws.com/v3/ticks?symbol={mapped_symbol}"
 
     try:
         response = requests.get(url, timeout=5)
@@ -26,15 +26,15 @@ def get_live_price(symbol: str) -> float:
                 print(f"✅ Live price for {symbol}: {price}")
                 return price
             else:
-                print(f"⚠️ Tick format error: {data}")
+                print(f"⚠️ Unexpected tick format: {data}")
         else:
             print(f"❌ Deriv API error: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"❌ Failed to fetch live price from Deriv REST API: {e}")
+        print(f"❌ Failed to fetch live price: {e}")
 
     return 0.0
 
-# ✅ Signal generation logic
+# ✅ Generate a random but realistic signal
 def generate_signal(symbol: str, price: float) -> dict:
     direction = random.choice(["buy", "sell"])
     order_type = random.choice(["market", "buy_limit", "sell_limit", "buy_stop", "sell_stop"])
