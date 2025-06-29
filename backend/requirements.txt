@@ -1,6 +1,4 @@
-websockets
 fastapi
 uvicorn
-pydantic
 python-telegram-bot
-python-dotenv
+requests
