@@ -6,10 +6,10 @@ from telegram_bot import send_telegram_signal
 
 app = FastAPI()
 
-# ✅ Allow cross-origin requests (adjust for production if needed)
+# ✅ Enable CORS for your frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can restrict this later
+    allow_origins=["*"],  # Restrict to your frontend URL in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -19,11 +19,11 @@ app.add_middleware(
 class SignalRequest(BaseModel):
     symbol: str
 
-# ✅ Signal generation endpoint using live price
+# ✅ Main signal endpoint
 @app.post("/generate-signal/")
 async def generate_signal_with_live_price(data: SignalRequest):
     try:
-        live_price = await get_live_price(data.symbol)
+        live_price = get_live_price(data.symbol)
         if live_price == 0.0:
             return {"error": "Failed to fetch live price from Deriv."}
 
