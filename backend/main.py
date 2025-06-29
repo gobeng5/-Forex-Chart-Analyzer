@@ -23,12 +23,10 @@ class SignalRequest(BaseModel):
 @app.post("/generate-signal/")
 async def generate_signal_with_live_price(data: SignalRequest):
     try:
-        # ✅ Await the async price fetch
-        price = await get_live_price(data.symbol)
+        price = get_live_price(data.symbol)  # ✅ No 'await' needed here
         if price == 0.0:
             return {"error": "Failed to fetch live price from Deriv."}
 
-        # ✅ Generate and send signal
         signal = generate_signal(data.symbol, price)
         print(f"📈 Signal generated: {signal}")
         send_telegram_signal(signal)
