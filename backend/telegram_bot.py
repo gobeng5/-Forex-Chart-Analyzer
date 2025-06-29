@@ -1,43 +1,36 @@
-import httpx
 import os
-from dotenv import load_dotenv
+import requests
 
-load_dotenv()
-
+# ✅ Use Render environment variable for token and chat ID
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")  # could be a user ID or channel ID
 
 def send_telegram_signal(signal: dict):
-    if not signal:
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("❌ Telegram bot token or chat ID not set in environment.")
         return
 
-    message = f"""
-🚨 *New Trade Signal Alert*
-
-📉 *Symbol*: `{signal['symbol']}`
-🕒 *HTF*: `{signal['timeframe_htf']}` | *LTF*: `{signal['timeframe_ltf']}`
-
-📊 *Direction*: *{signal['direction'].upper()}*
-📥 *Order Type*: `{signal['order_type']}`
-
-🎯 *Entry*: `{signal['entry']}`
-⛔ *Stop Loss*: `{signal['sl']}`
-✅ *Take Profit*: `{signal['tp']}`
-
-📈 *Confidence Score*: *{signal['confidence']}%*
-
-#Forex #SignalBot #{signal['direction']} #MTF
-    """
+    message = (
+        f"📊 *New Signal: {signal['symbol']} ({signal['timeframe_ltf']} / {signal['timeframe_htf']})*\n"
+        f"{'🔻 SELL' if signal['direction'] == 'sell' else '🔺 BUY'} *{signal['order_type'].upper()}*\n\n"
+        f"📥 Entry: `{signal['entry']}`\n"
+        f"🛑 SL: `{signal['sl']}`\n"
+        f"🎯 TP: `{signal['tp']}`\n"
+        f"📊 Confidence: `{signal['confidence']}%`\n"
+    )
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
+    data = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": message,
         "parse_mode": "Markdown"
     }
 
     try:
-        response = httpx.post(url, data=payload)
-        response.raise_for_status()
+        response = requests.post(url, json=data, timeout=5)
+        if response.status_code == 200:
+            print("✅ Signal sent to Telegram.")
+        else:
+            print(f"❌ Telegram error {response.status_code}: {response.text}")
     except Exception as e:
-        print(f"Failed to send Telegram message: {e}")
+        print(f"❌ Failed to send Telegram message: {e}")
