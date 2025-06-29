@@ -1,8 +1,11 @@
+import os
+import json
 import random
-import requests
+import asyncio
+import websockets
 
-# ✅ Fetch live price using Deriv REST API (BinaryWS)
-def get_live_price(symbol: str) -> float:
+# ✅ Fetch live price using Deriv WebSocket with authorization
+async def get_live_price(symbol: str) -> float:
     deriv_symbol_map = {
         "Boom 1000": "BOOM1000",
         "Boom 500": "BOOM500",
@@ -14,38 +17,54 @@ def get_live_price(symbol: str) -> float:
         "Volatility 100 Index": "R_100"
     }
 
+    ws_url = "wss://ws.derivws.com/websockets/v3"
     mapped_symbol = deriv_symbol_map.get(symbol, "R_75")
-    url = f"https://api.binaryws.com/v3/ticks?symbol={mapped_symbol}"
+    token = os.getenv("DERIV_API_TOKEN")
+
+    if not token:
+        print("❌ DERIV_API_TOKEN is missing in environment.")
+        return 0.0
 
     try:
-        print(f"📡 Fetching price from: {url}")
-        response = requests.get(url, timeout=5)
+        print(f"🔌 Connecting to WebSocket for {mapped_symbol}")
+        async with websockets.connect(ws_url, ping_interval=None) as ws:
+            # Authorize
+            await ws.send(json.dumps({
+                "authorize": token
+            }))
+            auth_response = await ws.recv()
+            print("🔑 Authorization response:", auth_response)
 
-        print(f"🌐 Status: {response.status_code}")
-        print(f"📦 Response: {response.text[:300]}")  # Limit log length for safety
+            # Subscribe to tick stream
+            await ws.send(json.dumps({
+                "ticks": mapped_symbol,
+                "subscribe": 1
+            }))
+            print(f"📡 Subscribed to ticks for {mapped_symbol}")
 
-        if response.status_code == 200:
-            data = response.json()
-            if "tick" in data and "quote" in data["tick"]:
-                price = float(data["tick"]["quote"])
-                print(f"✅ Live price for {symbol}: {price}")
-                return price
-            else:
-                print("⚠️ No valid tick found in response.")
-        else:
-            print(f"❌ Deriv API returned error {response.status_code}")
+            # Receive tick
+            for attempt in range(10):
+                try:
+                    message = await asyncio.wait_for(ws.recv(), timeout=5)
+                    print(f"🛰️ Tick received: {message}")
+                    data = json.loads(message)
+                    if "tick" in data and "quote" in data["tick"]:
+                        price = float(data["tick"]["quote"])
+                        print(f"✅ Live price for {symbol}: {price}")
+                        return price
+                except asyncio.TimeoutError:
+                    print(f"⚠️ Timeout waiting for tick ({attempt + 1}/10)")
 
     except Exception as e:
-        print(f"❌ Exception while fetching price: {e}")
+        print(f"❌ WebSocket error: {e}")
 
-    print("❌ Final failure: could not fetch live price.")
+    print("❌ Final failure: No live price received.")
     return 0.0
 
-# ✅ Generate signal based on live price
+# ✅ AI-based signal generation logic
 def generate_signal(symbol: str, price: float) -> dict:
     direction = random.choice(["buy", "sell"])
     order_type = random.choice(["market", "buy_limit", "sell_limit", "buy_stop", "sell_stop"])
-
     entry = round(price + random.uniform(-5, 5), 2)
 
     if direction == "sell":
