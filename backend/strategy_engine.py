@@ -15,8 +15,7 @@ def get_live_price(symbol: str) -> float:
     }
 
     mapped_symbol = deriv_symbol_map.get(symbol, "R_75")
-   url = f"https://deriv-price-proxy.vercel.app/price?symbol={mapped_symbol}"
-
+    url = f"https://deriv-price-proxy.vercel.app/price?symbol={mapped_symbol}"
 
     try:
         print(f"🌐 Fetching live price from: {url}")
@@ -34,6 +33,7 @@ def get_live_price(symbol: str) -> float:
 
     print("❌ Failed to fetch live price.")
     return 0.0
+
 
 # ✅ Generate a signal based on the live price
 def generate_signal(symbol: str, price: float) -> dict:
