@@ -1,7 +1,6 @@
 import random
 import requests
 
-# Map readable names to Deriv symbols
 DERIV_SYMBOL_MAP = {
     "Boom 1000": "BOOM1000",
     "Boom 500": "BOOM500",
@@ -13,7 +12,6 @@ DERIV_SYMBOL_MAP = {
     "Volatility 100 Index": "R_100"
 }
 
-# ✅ Updated proxy URL (working)
 DERIV_PROXY_BASE_URL = "https://deriv-api-proxy.onrender.com"
 
 def get_live_price(symbol: str) -> float:
