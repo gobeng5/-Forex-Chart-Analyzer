@@ -1,5 +1,7 @@
 import random
-import requests
+import asyncio
+import websockets
+import json
 
 DERIV_SYMBOL_MAP = {
     "Boom 1000": "BOOM1000",
@@ -12,26 +14,27 @@ DERIV_SYMBOL_MAP = {
     "Volatility 100 Index": "R_100"
 }
 
-def get_live_price(symbol: str) -> float:
+async def fetch_price(symbol: str) -> float:
     mapped_symbol = DERIV_SYMBOL_MAP.get(symbol, "R_75")
-    url = f"https://api.deriv.com/api/tick?symbol={mapped_symbol}"
+    uri = "wss://ws.derivws.com/websockets/v3?app_id=1089"
 
     try:
-        print(f"🌐 Fetching live price from Deriv REST API: {url}")
-        response = requests.get(url, timeout=5)
-
-        if response.status_code == 200:
-            data = response.json()
+        async with websockets.connect(uri) as websocket:
+            await websocket.send(json.dumps({
+                "ticks": mapped_symbol,
+                "subscribe": 0
+            }))
+            response = await websocket.recv()
+            data = json.loads(response)
             price = float(data["tick"]["quote"])
             print(f"✅ Live price for {symbol}: {price}")
             return price
-        else:
-            print(f"❌ Deriv API error {response.status_code}: {response.text}")
     except Exception as e:
-        print(f"❌ Exception fetching live price: {e}")
+        print(f"❌ WebSocket error: {e}")
+        return 0.0
 
-    print("❌ Failed to fetch live price.")
-    return 0.0
+def get_live_price(symbol: str) -> float:
+    return asyncio.run(fetch_price(symbol))
 
 def generate_signal(symbol: str, price: float) -> dict:
     direction = random.choice(["buy", "sell"])
