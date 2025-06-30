@@ -4,31 +4,43 @@ from pydantic import BaseModel
 from strategy_engine import generate_signal, get_live_price
 from telegram_bot import send_telegram_signal
 
-app = FastAPI()
+app = FastAPI(
+    title="AI Forex Signal Generator",
+    description="Generates trading signals using live Deriv prices and sends to Telegram.",
+    version="1.0.0"
+)
 
-# ✅ CORS for frontend integration
+# ✅ CORS setup — restrict in production to your actual frontend domain
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, set this to your Vercel frontend URL
+    allow_origins=["*"],  # e.g., ["https://your-frontend.vercel.app"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Input model for /generate-signal/
+# ✅ Request body model
 class SignalRequest(BaseModel):
     symbol: str
 
-# ✅ Main route to generate signal using live Deriv price
+# ✅ Health check route
+@app.get("/")
+def root():
+    return {"message": "Forex Signal API is running."}
+
+# ✅ Main endpoint: generate signal using live Deriv price
 @app.post("/generate-signal/")
 async def generate_signal_with_live_price(data: SignalRequest):
     try:
-        price = get_live_price(data.symbol)  # ✅ No 'await' needed here
+        price = get_live_price(data.symbol)
+
         if price == 0.0:
-            return {"error": "Failed to fetch live price from Deriv."}
+            return {"error": f"Could not retrieve live price for symbol: {data.symbol}"}
 
         signal = generate_signal(data.symbol, price)
         print(f"📈 Signal generated: {signal}")
+
+        # Send to Telegram bot
         send_telegram_signal(signal)
 
         return {"signal": signal}
