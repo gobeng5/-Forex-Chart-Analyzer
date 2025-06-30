@@ -1,6 +1,7 @@
 import random
-import requests
+from deriv_api import DerivAPI
 
+# Deriv symbol mappings
 DERIV_SYMBOL_MAP = {
     "Boom 1000": "BOOM1000",
     "Boom 500": "BOOM500",
@@ -12,29 +13,21 @@ DERIV_SYMBOL_MAP = {
     "Volatility 100 Index": "R_100"
 }
 
-# ✅ Updated proxy URL
-DERIV_PROXY_BASE_URL = "https://deriv-proxy-<unique-id>.onrender.com"
+# ✅ Deriv API client
+api = DerivAPI()
 
 def get_live_price(symbol: str) -> float:
     mapped_symbol = DERIV_SYMBOL_MAP.get(symbol, "R_75")
-    url = f"{DERIV_PROXY_BASE_URL}/price?symbol={mapped_symbol}"
 
     try:
-        print(f"🌐 Fetching live price from: {url}")
-        response = requests.get(url, timeout=5)
-
-        if response.status_code == 200:
-            data = response.json()
-            price = float(data["price"])
-            print(f"✅ Live price for {symbol}: {price}")
-            return price
-        else:
-            print(f"❌ Proxy error {response.status_code}: {response.text}")
+        print(f"🌐 Fetching live price directly from Deriv API for: {mapped_symbol}")
+        tick_data = api.ticks(symbol=mapped_symbol, subscribe=False)
+        price = float(tick_data["quote"])
+        print(f"✅ Live price for {symbol}: {price}")
+        return price
     except Exception as e:
-        print(f"❌ Exception fetching proxy price: {e}")
-
-    print("❌ Failed to fetch live price.")
-    return 0.0
+        print(f"❌ Error fetching live price: {e}")
+        return 0.0
 
 def generate_signal(symbol: str, price: float) -> dict:
     direction = random.choice(["buy", "sell"])
