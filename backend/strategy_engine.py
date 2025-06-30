@@ -1,20 +1,24 @@
 import random
 import requests
 
-def get_live_price(symbol: str) -> float:
-    deriv_symbol_map = {
-        "Boom 1000": "BOOM1000",
-        "Boom 500": "BOOM500",
-        "Crash 1000": "CRASH1000",
-        "Crash 500": "CRASH500",
-        "Volatility 75 Index": "R_75",
-        "Volatility 25 Index": "R_25",
-        "Volatility 10 Index": "R_10",
-        "Volatility 100 Index": "R_100"
-    }
+# Map user-friendly symbol names to Deriv symbol codes
+DERIV_SYMBOL_MAP = {
+    "Boom 1000": "BOOM1000",
+    "Boom 500": "BOOM500",
+    "Crash 1000": "CRASH1000",
+    "Crash 500": "CRASH500",
+    "Volatility 75 Index": "R_75",
+    "Volatility 25 Index": "R_25",
+    "Volatility 10 Index": "R_10",
+    "Volatility 100 Index": "R_100"
+}
 
-    mapped_symbol = deriv_symbol_map.get(symbol, "R_75")
-    url = f"https://deriv-proxy.fly.dev/price?symbol={mapped_symbol}"
+# ✅ Updated: Use working proxy hosted on Render
+DERIV_PROXY_BASE_URL = "https://deriv-api-proxy.onrender.com"
+
+def get_live_price(symbol: str) -> float:
+    mapped_symbol = DERIV_SYMBOL_MAP.get(symbol, "R_75")
+    url = f"{DERIV_PROXY_BASE_URL}/price?symbol={mapped_symbol}"
 
     try:
         print(f"🌐 Fetching live price from: {url}")
