@@ -10,25 +10,25 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# ✅ CORS setup — restrict in production to your actual frontend domain
+# ✅ CORS settings — allow your frontend domain here in production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # e.g., ["https://your-frontend.vercel.app"]
+    allow_origins=["*"],  # Replace with ["https://your-frontend.vercel.app"] in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ✅ Request body model
+# ✅ Request model
 class SignalRequest(BaseModel):
     symbol: str
 
-# ✅ Health check route
+# ✅ Health check
 @app.get("/")
 def root():
     return {"message": "Forex Signal API is running."}
 
-# ✅ Main endpoint: generate signal using live Deriv price
+# ✅ Generate signal using live price
 @app.post("/generate-signal/")
 async def generate_signal_with_live_price(data: SignalRequest):
     try:
@@ -40,7 +40,6 @@ async def generate_signal_with_live_price(data: SignalRequest):
         signal = generate_signal(data.symbol, price)
         print(f"📈 Signal generated: {signal}")
 
-        # Send to Telegram bot
         send_telegram_signal(signal)
 
         return {"signal": signal}
