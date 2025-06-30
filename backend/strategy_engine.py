@@ -12,11 +12,12 @@ DERIV_SYMBOL_MAP = {
     "Volatility 100 Index": "R_100"
 }
 
-DERIV_PROXY_BASE_URL = "https://deriv-api-proxy.onrender.com"
+# ✅ Updated proxy URL
+DERIV_PROXY_BASE_URL = "https://deriv-proxy-<unique-id>.onrender.com"
 
 def get_live_price(symbol: str) -> float:
     mapped_symbol = DERIV_SYMBOL_MAP.get(symbol, "R_75")
-    url = f"https://deriv-api-proxy.onrender.com/price?symbol={mapped_symbol}"
+    url = f"{DERIV_PROXY_BASE_URL}/price?symbol={mapped_symbol}"
 
     try:
         print(f"🌐 Fetching live price from: {url}")
